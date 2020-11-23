@@ -3,9 +3,42 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<!--访问该页面时,在此处生成CSRF令牌.-->
+<!--	<meta name="_csrf" th:content="${_csrf.token}">-->
+<!--	<meta name="_csrf_header" th:content="${_csrf.headerName}">-->
+
 	<link rel="icon" href="https://static.nowcoder.com/images/logo_87_87.png"/>
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
 	<link rel="stylesheet" th:href="@{/css/global.css}" />
+	<style>
+		/*默认样式，主要是position:fixed实现屏幕绝对定位*/
+		#gotoTop{
+			display:none;
+			position:fixed;
+			top:75%;
+			left:50%;
+			cursor:pointer;
+			margin-top:-50px;
+			margin-left:520px;
+			padding:9px 4px;
+			width:20px;
+			text-align:center;
+			border:1px solid #e0e0e0;
+			background:#fff;
+		}
+		/*用CSS表达式(expression)来实现ie6下position:fixed效果*/
+		#gotoTop{
+			_position:absolute;
+			_top:expression(documentElement.scrollTop + documentElement.clientHeight * 3/4 + "px")
+		}
+		/*鼠标进入的反馈效果*/
+		#gotoTop.hover{
+			background:#5CB542;
+			color:#fff;
+			text-decoration:none;
+		}
+	</style>
 	<title>牛客网-首页</title>
 </head>
 <body>
@@ -49,8 +82,8 @@
 							</li>
 						</ul>
 						<!-- 搜索 -->
-						<form class="form-inline my-2 my-lg-0" action="site/search.html">
-							<input class="form-control mr-sm-2" type="search" aria-label="Search" />
+						<form class="form-inline my-2 my-lg-0" method="get" th:action="@{/search}">
+							<input class="form-control mr-sm-2" type="search" aria-label="Search" name="keyword" th:value="${keyword}"/>
 							<button class="btn btn-outline-light my-2 my-sm-0" type="submit">搜索</button>
 						</form>
 					</div>
@@ -65,10 +98,10 @@
 					<!-- 筛选条件 -->
 					<ul class="nav nav-tabs mb-3">
 						<li class="nav-item">
-							<a class="nav-link active" href="#">最新</a>
+							<a th:class="|nav-link ${orderMode==0?'active':''}|" th:href="@{/index(orderMode=0)}">最新</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link" href="#">最热</a>
+							<a th:class="|nav-link ${orderMode==1?'active':''}|" th:href="@{/index(orderMode=1)}">最热</a>
 						</li>
 					</ul>
 					<button type="button" class="btn btn-primary btn-sm position-absolute rt-0" data-toggle="modal" data-target="#publishModal" th:if="${loginUser!=null}">我要发布</button>
@@ -148,7 +181,7 @@
 						<li th:class="|page-item ${page.current==1?'disabled':''}|">
 							<a class="page-link" th:href="@{${page.path}(current=${page.current-1})}">上一页</a></li>
 						<li th:class="|page-item ${i==page.current?'active':''}|" th:each="i:${#numbers.sequence(page.from,page.to)}">
-							<a class="page-link" href="#" th:text="${i}">1</a>
+							<a class="page-link" th:href="@{${page.path}(current=${i})}" th:text="${i}">1</a>
 						</li>
 						<li th:class="|page-item ${page.current==page.total?'disabled':''}|">
 							<a class="page-link" th:href="@{${page.path}(current=${page.current+1})}">下一页</a>
@@ -223,11 +256,41 @@
 			</div>
 		</footer>
 	</div>
+	<button type="button" id="page"></button>
 
 	<script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" crossorigin="anonymous"></script>
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
 	<script th:src="@{/js/global.js}"></script>
 	<script th:src="@{/js/index.js}"></script>
+
+	<script>
+		function gotoTop(min_height){
+			//预定义返回顶部的html代码，它的css样式默认为不显示
+			var gotoTop_html = '<div id="gotoTop">返回顶部</div>';
+			//将返回顶部的html代码插入页面上id为page的元素的末尾
+			$("#page").append(gotoTop_html);
+			$("#gotoTop").click(//定义返回顶部点击向上滚动的动画
+					function(){$('html,body').animate({scrollTop:0},700);
+					}).hover(//为返回顶部增加鼠标进入的反馈效果，用添加删除css类实现
+					function(){$(this).addClass("hover");},
+					function(){$(this).removeClass("hover");
+					});
+			//获取页面的最小高度，无传入值则默认为600像素
+			min_height ? min_height = min_height : min_height = 600;
+			//为窗口的scroll事件绑定处理函数
+			$(window).scroll(function(){
+				//获取窗口的滚动条的垂直位置
+				var s = $(window).scrollTop();
+				//当窗口的滚动条的垂直位置大于页面的最小高度时，让返回顶部元素渐现，否则渐隐
+				if( s > min_height){
+					$("#gotoTop").fadeIn(100);
+				}else{
+					$("#gotoTop").fadeOut(200);
+				};
+			});
+		};
+		gotoTop();
+	</script>
 </body>
 </html>
